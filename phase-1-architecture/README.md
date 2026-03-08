@@ -4,6 +4,13 @@
 
 Understand how MySQL processes a query end-to-end, from client connection to storage engine I/O. This phase builds the mental model that all subsequent phases depend on.
 
+## First Principle (Nguyên lý 0)
+
+**Hệ thống và ranh giới** — Trước khi tối ưu, phải biết máy chạy thế nào.
+
+- **Hỏi trước khi đọc:** Luồng một câu SQL đi qua những thành phần nào? Tại sao phải tách lớp SQL và storage engine? Handler API giải quyết vấn đề gì?
+- **Ánh xạ:** [first-principles-learning.md](../first-principles-learning.md) → Nguyên lý 0. Topic 1.1–1.6 là implementation của bản đồ hệ thống.
+
 ## Why This Phase First?
 
 You can't reason about *why* InnoDB has a buffer pool until you understand *where* the storage engine sits in the overall architecture. You can't reason about locking until you understand that the executor calls the storage engine row-by-row via the Handler API.
@@ -35,7 +42,8 @@ Phase 1 = the map. Phases 2–5 = zooming into each region.
 **Goal**: Understand what `mysqld` is and its major internal components.
 
 **Key Concepts**:
-- **`mysqld`** = single process, multi-threaded. The only server binary — everything runs inside this one process
+
+- `**mysqld`** = single process, multi-threaded. The only server binary — everything runs inside this one process
 - **Major subsystems**:
   - **Connection Manager**: authenticates clients, assigns threads, manages connection pool
   - **SQL Layer** (a.k.a. Server Layer): parser, preprocessor, optimizer, executor — engine-independent
@@ -51,6 +59,7 @@ Phase 1 = the map. Phases 2–5 = zooming into each region.
 - **Key directories**: `basedir` (binaries), `datadir` (tablespaces, logs, system tables)
 
 **Lab**:
+
 ```sql
 SELECT @@version, @@version_comment, @@hostname;
 SHOW VARIABLES LIKE 'basedir';
@@ -68,6 +77,7 @@ docker exec mysql-lab ls -la /var/lib/mysql/
 ```
 
 **Read**:
+
 - [MySQL Server Architecture](https://dev.mysql.com/doc/refman/8.4/en/mysqld-server.html)
 - *High Performance MySQL* Ch.1
 
@@ -80,6 +90,7 @@ docker exec mysql-lab ls -la /var/lib/mysql/
 **Goal**: Understand how a client talks to MySQL at the wire protocol level.
 
 **Key Concepts**:
+
 - **Transport**: TCP 3306 (remote), Unix socket (local)
 - **Handshake flow**: TCP connect → server greeting → client auth → OK/ERR
 - **Command phase**: `COM_QUERY` (SQL text), `COM_STMT_PREPARE/EXECUTE` (prepared statements), `COM_QUIT`
@@ -89,6 +100,7 @@ docker exec mysql-lab ls -la /var/lib/mysql/
 - **Connection pooling** (application side): HikariCP, ProxySQL — reuses connections
 
 **Lab**:
+
 ```sql
 SHOW PROCESSLIST;
 SHOW STATUS LIKE 'Connections';
@@ -101,6 +113,7 @@ SELECT * FROM performance_schema.accounts;
 ```
 
 **Read**:
+
 - [MySQL Client/Server Protocol](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_basics.html)
 
 **Deliverable**: Explain the full lifecycle from TCP SYN to COM_QUIT, including which MySQL thread states correspond to each phase.
@@ -112,6 +125,7 @@ SELECT * FROM performance_schema.accounts;
 **Goal**: Understand how MySQL handles concurrency internally.
 
 **Key Concepts**:
+
 - **Thread-per-connection** (default): 1 client = 1 OS thread. Simple but ~1MB stack per thread, scales poorly beyond ~5000
 - **Thread cache**: disconnected threads return to cache → avoids `pthread_create()` overhead
 - **Thread pool** (Enterprise / Percona): fixed worker pool with priority queues
@@ -123,6 +137,7 @@ SELECT * FROM performance_schema.accounts;
 - **Mutex / rw-lock contention**: visible in `SHOW ENGINE INNODB STATUS` → SEMAPHORES
 
 **Lab**:
+
 ```sql
 SHOW VARIABLES LIKE 'thread_handling';
 SHOW STATUS LIKE 'Threads%';
@@ -133,6 +148,7 @@ SELECT THREAD_ID, PROCESSLIST_USER, PROCESSLIST_COMMAND
 ```
 
 **Read**:
+
 - [Thread Handling](https://dev.mysql.com/doc/refman/8.4/en/connection-threads.html)
 
 **Deliverable**: List all background threads and explain each role. Calculate thread cache hit ratio.
@@ -144,6 +160,7 @@ SELECT THREAD_ID, PROCESSLIST_USER, PROCESSLIST_COMMAND
 **Goal**: Trace a SQL statement through every internal layer.
 
 **Key Concepts**:
+
 - **Parser**: SQL text → AST. Catches syntax errors
 - **Preprocessor**: semantic validation — table/column existence, permissions
 - **Optimizer**: cost-based plan selection — access paths, join order, join algorithm
@@ -161,6 +178,7 @@ Client SQL text
 ```
 
 **Lab**:
+
 ```sql
 EXPLAIN FORMAT=TREE SELECT * FROM lab.employees WHERE department = 'Engineering';
 EXPLAIN ANALYZE SELECT * FROM lab.employees WHERE department = 'Engineering' AND salary > 80000;
@@ -171,6 +189,7 @@ SET optimizer_trace = 'enabled=off';
 ```
 
 **Read**:
+
 - *High Performance MySQL* Ch.8
 - [Optimizer Tracing](https://dev.mysql.com/doc/dev/mysql-server/latest/PAGE_OPT_TRACE.html)
 
@@ -183,13 +202,15 @@ SET optimizer_trace = 'enabled=off';
 **Goal**: Understand how MySQL decouples SQL processing from data storage.
 
 **Key Concepts**:
+
 - **Handler API**: abstract C++ interface (`ha_*` methods) between SQL layer and engines
 - **Key operations**: `ha_rnd_init/next` (full scan), `ha_index_init/read/next` (index scan), `ha_write_row`, `ha_update_row`, `ha_delete_row`
-- **`handlerton`**: registration struct each engine provides at startup
+- `**handlerton`**: registration struct each engine provides at startup
 - **Pluggable**: each table can use a different engine via `ENGINE=xxx`
 - **Available engines**: InnoDB (default), MyISAM, MEMORY, CSV, Archive, Blackhole, NDB
 
 **Lab**:
+
 ```sql
 SHOW ENGINES;
 SELECT TABLE_NAME, ENGINE, ROW_FORMAT, TABLE_ROWS FROM information_schema.TABLES
@@ -200,6 +221,7 @@ SHOW STATUS LIKE 'Handler%';
 ```
 
 **Read**:
+
 - [Storage Engines](https://dev.mysql.com/doc/refman/8.4/en/storage-engines.html)
 - Source: `sql/handler.h`
 
@@ -213,18 +235,21 @@ SHOW STATUS LIKE 'Handler%';
 
 **Key Concepts**:
 
-| | InnoDB | MyISAM |
-|---|---|---|
-| Transactions | ACID (redo + undo) | No |
-| Locking | Row-level | Table-level |
-| Crash recovery | Automatic (redo log) | Manual `REPAIR TABLE` |
-| Clustered index | PK = data | Heap + separate index |
-| MVCC | Readers don't block writers | Shared table lock |
-| Storage | `.ibd` per table | `.MYD` + `.MYI` |
+
+|                 | InnoDB                      | MyISAM                |
+| --------------- | --------------------------- | --------------------- |
+| Transactions    | ACID (redo + undo)          | No                    |
+| Locking         | Row-level                   | Table-level           |
+| Crash recovery  | Automatic (redo log)        | Manual `REPAIR TABLE` |
+| Clustered index | PK = data                   | Heap + separate index |
+| MVCC            | Readers don't block writers | Shared table lock     |
+| Storage         | `.ibd` per table            | `.MYD` + `.MYI`       |
+
 
 **Why InnoDB won**: crash safety + row locking + MVCC = viable for concurrent OLTP. MyISAM's table-level locking = bottleneck under writes.
 
 **Lab**:
+
 ```sql
 SHOW ENGINES;
 SHOW ENGINE INNODB STATUS\G
@@ -237,6 +262,7 @@ docker exec mysql-lab ls -lh /var/lib/mysql/lab/
 ```
 
 **Read**:
+
 - [InnoDB Introduction](https://dev.mysql.com/doc/refman/8.4/en/innodb-introduction.html)
 
 **Deliverable**: Name 3 scenarios where MyISAM might still be used. Explain why each is increasingly rare.
@@ -264,11 +290,14 @@ Client connects (TCP 3306)
 
 ## Progress Tracker
 
-| # | Topic | Status |
-|---|-------|--------|
-| 1.1 | Server Architecture | [ ] |
-| 1.2 | Client Protocol & Connection | [ ] |
-| 1.3 | Thread Model | [ ] |
-| 1.4 | Query Execution Flow | [ ] |
-| 1.5 | Storage Engine Layer | [ ] |
-| 1.6 | InnoDB vs MyISAM | [ ] |
+
+| #   | Topic                        | Status |
+| --- | ---------------------------- | ------ |
+| 1.1 | Server Architecture          | [ ]    |
+| 1.2 | Client Protocol & Connection | [ ]    |
+| 1.3 | Thread Model                 | [ ]    |
+| 1.4 | Query Execution Flow         | [ ]    |
+| 1.5 | Storage Engine Layer         | [ ]    |
+| 1.6 | InnoDB vs MyISAM             | [ ]    |
+
+

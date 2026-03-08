@@ -4,6 +4,13 @@ Master MySQL's cost-based optimizer, learn to read execution plans, and design e
 
 > Each topic below is **self-contained**. Jump into any item freely — prerequisites are noted where needed.
 
+## First Principle (Nguyên lý 5)
+
+**Chọn kế hoạch thực thi** — Nhiều cách chạy một query; optimizer chọn thế nào?
+
+- **Hỏi trước khi đọc:** Với một JOIN 3 bảng có bao nhiêu thứ tự join? Cost là gì? Làm sao biết plan đang chạy đúng/sai?
+- **Ánh xạ:** [first-principles-learning.md](../first-principles-learning.md) → Nguyên lý 5. Topics 3.1–3.4 = cost-based optimizer, execution plan, index strategy, query rewrite.
+
 ## Topic Map
 
 ```

@@ -4,6 +4,13 @@
 
 Every query is a search problem. A table with 10 million rows stored across thousands of 16KB pages — how do you find the one row you need without reading them all? This phase builds from that constraint to derive the optimizer, execution plans, index strategies, and query patterns that make MySQL fast.
 
+## First Principle (Nguyên lý 5)
+
+**Chọn kế hoạch thực thi** — Tìm 1 row trong triệu row phải nhanh; full scan O(n) không chấp nhận được.
+
+- **Hỏi trước khi đọc:** Optimizer đánh giá cost thế nào? EXPLAIN vs EXPLAIN ANALYZE dùng khi nào? Index strategy (composite, covering, ICP) giải quyết bài toán gì?
+- **Ánh xạ:** [first-principles-learning.md](../first-principles-learning.md) → Nguyên lý 5. Phase 4 đi sâu hơn vào constraint "search" + optimizer + index.
+
 ## Why This Phase Now?
 
 Phase 2 explained *how* data is stored (B+ Trees, pages, buffer pool). Phase 3 explained *how* concurrent access works (locks, MVCC, isolation). Now the question becomes: given all that machinery, **how does MySQL find data efficiently?** The answer is the optimizer + indexes — and understanding both requires knowing the storage layer first.

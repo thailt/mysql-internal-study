@@ -4,6 +4,13 @@
 
 Every design decision in this phase traces back to one physical constraint: **disk is slow**. InnoDB doesn't use pages, buffer pools, and write-ahead logs because someone thought they were elegant — it uses them because the hardware leaves no other choice.
 
+## First Principles (Nguyên lý 1, 2, 4)
+
+- **1. Lưu trữ:** Cache disk trong RAM thế nào? Đơn vị I/O? Eviction? → 2.1 Page I/O & Buffer Pool.
+- **2. Tìm dữ liệu:** O(log n) lookup, range scan, clustered vs secondary? → 2.2 B+ Tree & Data Organization.
+- **4. Bền vững:** Commit = gì trên disk? Crash recovery? Torn page? → 2.3 WAL & Redo Log, 2.4 Checkpoint & Doublewrite.
+- **Ánh xạ đầy đủ:** [first-principles-learning.md](../first-principles-learning.md) → Nguyên lý 1, 2, 4.
+
 ## Why This Phase?
 
 Phase 1 showed that the executor calls the storage engine via the Handler API. But *how* does the storage engine actually read and write data? Why doesn't InnoDB just `read()` and `write()` individual rows from files?

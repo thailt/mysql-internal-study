@@ -6,15 +6,17 @@ A first-principles, hands-on learning plan to deeply understand MySQL internals 
 
 Instead of studying components in isolation, this plan follows **constraint chains** — each phase starts from a fundamental physical constraint and derives the engineering solutions that follow from it.
 
+**Recommended learning order:** follow **[first-principles-learning.md](first-principles-learning.md)** — each step starts with a *question* (e.g. "Cache disk in RAM how?") then maps to phase/topic. Use the table "Thứ tự học đề xuất" and "Progress tracker" there.
+
 ```
 Physical reality                    Engineering consequence
 ─────────────────                   ──────────────────────
+Understand the machine first    →  Phase 1: The Big Picture
+
 Disk is 1000x slower than RAM   →  Phase 2: Storage & Durability
 Memory is lost on crash         ↗
 
-Multiple users hit same data    →  Phase 3: Concurrency & Isolation
-
-Need to find 1 row in millions  →  Phase 4: Query Performance
+Need to find 1 row in millions  →  Phase 3 & 4: Query Optimization / Performance
 
 Single server has limits        →  Phase 5: Scale, HA & Production
 ```
@@ -29,11 +31,12 @@ Single server has limits        →  Phase 5: Scale, HA & Production
 │   ├── conf/my.cnf                    # Custom MySQL config
 │   ├── init/01-sample-data.sql        # Seed data
 │   └── README.md                      # Lab usage guide
-├── phase-1-architecture/              # Week 1–2: The Big Picture
-├── phase-2-storage-durability/        # Week 3–5: The Disk Problem
-├── phase-3-concurrency/               # Week 6–7: The Concurrency Problem
-├── phase-4-query-performance/         # Week 8–9: The Search Problem
-└── phase-5-scale-production/          # Week 10+: The Scale Problem
+├── first-principles-learning.md       # Canonical order: question → principle → phase
+├── phase-1-architecture/              # Week 1–2: The Big Picture (Principle 0)
+├── phase-2-storage-durability/        # Week 3–5: The Disk Problem (Principles 1, 2, 4)
+├── phase-3-query-optimization/        # Week 6–7: Query Optimizer (Principle 5)
+├── phase-4-query-performance/         # Week 8–9: The Search Problem (Principle 5)
+└── phase-5-scale-production/          # Week 10+: Scale, HA & Production (Principle 6)
 ```
 
 ## Lab Environment
@@ -73,27 +76,27 @@ See [docker/README.md](docker/README.md) for details.
 | 2.3 | Write-Ahead Logging & Redo Log | Memory volatile → log changes before flush (WAL) |
 | 2.4 | Checkpoint, Doublewrite & Crash Recovery | Redo log finite → checkpoint; torn pages → doublewrite |
 
-### Phase 3: The Concurrency Problem (Week 6–7)
+### Phase 3: Query Optimization (Week 6–7)
 
-> *Multiple users reading and writing the same data. How do we keep everyone correct without killing performance?*
-
-| # | Topic | Constraint → Solution |
-|---|-------|----------------------|
-| 3.1 | Isolation Levels & The Concurrency Spectrum | Concurrent access → define correctness trade-offs |
-| 3.2 | Locking — Writer Safety | Writers conflict → row/gap/next-key locks, deadlock detection |
-| 3.3 | MVCC — Reader Freedom | Readers block on locks → keep old versions, lock-free reads |
-| 3.4 | Transaction Lifecycle | Putting it together: begin → read/write → commit/rollback |
-
-### Phase 4: The Search Problem (Week 8–9)
-
-> *Finding specific data among millions of rows must be fast. How does the optimizer choose the best path?*
+> *Many possible plans for one query. How does the optimizer choose the best one?* (First principle 5)
 
 | # | Topic | Constraint → Solution |
 |---|-------|----------------------|
-| 4.1 | How the Optimizer Thinks | Many possible plans → cost-based selection |
-| 4.2 | Reading Execution Plans | Can't optimize blind → EXPLAIN ANALYZE |
-| 4.3 | Index Strategy | Full scan too slow → composite, covering, ICP |
-| 4.4 | Query Rewrite & Anti-Patterns | Bad SQL can't be fixed by optimizer → sargable predicates |
+| 3.1 | Query Optimizer | Many plans → cost-based selection, join order, NLJ/Hash Join |
+| 3.2 | Execution Plan | Can't optimize blind → EXPLAIN, EXPLAIN ANALYZE |
+| 3.3 | Index Strategy | Full scan too slow → composite, covering, ICP |
+| 3.4 | Query Rewrite | Subquery → semi-join, derived merge, sargable predicates |
+
+### Phase 4: The Search Problem — Query Performance (Week 8–9)
+
+> *Finding specific data among millions of rows must be fast.* (First principle 5, deeper)
+
+| # | Topic | Constraint → Solution |
+|---|-------|----------------------|
+| 4.1 | How the Optimizer Thinks | Cost model, join algorithms, optimizer trace |
+| 4.2 | Reading Execution Plans | Access types, FORMAT=TREE/JSON, estimated vs actual |
+| 4.3 | Index Strategy | Composite, covering, ICP, skip scan, invisible index |
+| 4.4 | Query Rewrite & Anti-Patterns | Sargable predicates, anti-patterns |
 
 ### Phase 5: The Scale Problem (Week 10+)
 
@@ -153,8 +156,9 @@ Single server limits
 
 - [x] Project initialized
 - [x] Docker lab running (MySQL 8.4.3, verified)
+- [x] First-principles learning path ([first-principles-learning.md](first-principles-learning.md))
 - [ ] Phase 1: The Big Picture
 - [ ] Phase 2: The Disk Problem
-- [ ] Phase 3: The Concurrency Problem
-- [ ] Phase 4: The Search Problem
+- [ ] Phase 3: Query Optimization
+- [ ] Phase 4: Query Performance
 - [ ] Phase 5: The Scale Problem

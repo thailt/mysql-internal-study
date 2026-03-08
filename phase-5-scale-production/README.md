@@ -4,6 +4,13 @@
 
 A single MySQL instance can only handle so much traffic, has a single point of failure, and gives limited visibility into what's going wrong. This phase addresses the three forces that push you beyond a single server: **sharing changes** (binary log & replication), **surviving failure** (high availability), and **seeing what's happening** (observability).
 
+## First Principle (Nguyên lý 6)
+
+**Mở rộng và sẵn sàng** — Một server có giới hạn; cần chia sẻ thay đổi, sống sót khi chết, phục hồi sai lỗi, và đo đạc.
+
+- **Hỏi trước khi đọc:** Làm sao replica biết "chỗ nào" để đồng bộ? Redo log và binlog phải nhất quán thế nào? Server chết, replica lag 2s — failover xong mất tối đa bao nhiêu commit? Backup + PITR cần những gì?
+- **Ánh xạ:** [first-principles-learning.md](../first-principles-learning.md) → Nguyên lý 6. Topics 5.1–5.4 = binlog, replication/HA, backup/PITR, observability.
+
 ## Why This Phase?
 
 Every previous phase assumed a single mysqld instance. In production, that's rarely enough. You need to replicate data for read scaling and failover, recover from disasters, and diagnose problems systematically. All of these capabilities are built on top of the internals you already understand — redo log, buffer pool, transactions, locking, and query execution.
