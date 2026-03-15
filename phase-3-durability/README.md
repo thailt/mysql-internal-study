@@ -18,7 +18,6 @@
 - crash recovery flow
 
 ## Primary reading
-- Original source material: `../phase-2-storage-durability/README.md` sections 2.3 and 2.4
 - Canonical sequence: `../roadmap-v2.md`
 - Cheatsheet: `../cheatsheet.md`
 

@@ -18,7 +18,6 @@
 - health check runbooks
 
 ## Primary reading
-- Original source material: `../phase-5-scale-production/README.md`
 - Cross-cutting reference: `../production-symptom-map.md`
 - Canonical sequence: `../roadmap-v2.md`
 

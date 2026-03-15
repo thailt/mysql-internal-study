@@ -16,7 +16,6 @@
 - safe SQL rewrite and tuning habits
 
 ## Primary reading
-- Original source material: `../phase-4-query-performance/README.md`
 - Cross-cutting reference: `../production-symptom-map.md`
 - Canonical sequence: `../roadmap-v2.md`
 

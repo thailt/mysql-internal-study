@@ -1,6 +1,6 @@
 # Migration Notes — Roadmap v2
 
-This repo has been refactored from the original phase structure into a clearer v2 learning spine.
+This repo was refactored from the original phase structure into a clearer v2 learning spine.
 
 ## Why v2 exists
 The old structure had strong material, but it mixed some concerns that are better learned separately for backend/production reality:
@@ -20,27 +20,27 @@ The old structure had strong material, but it mixed some concerns that are bette
 6. Replication / HA / Operations
 ```
 
-## Mapping: legacy -> v2
+## Historical mapping (legacy -> v2)
 
-| Legacy material | v2 destination |
+| Historical material | v2 destination |
 |---|---|
-| `phase-1-architecture/*` | `phase-0-system-boundaries/*` |
-| `phase-2-storage-durability/*` (storage parts) | `phase-1-storage/*` |
-| `phase-2-storage-durability/*` (durability parts) | `phase-3-durability/*` |
-| implicit MVCC/locking concepts formerly embedded in storage material | `phase-2-concurrency/*` |
-| `phase-3-query-optimization/*` | `phase-4-optimizer/*` |
-| `phase-4-query-performance/*` | `phase-5-performance-tuning/*` |
-| `phase-5-scale-production/*` | `phase-6-replication-ha-ops/*` |
+| phase-1 architecture | `phase-0-system-boundaries/*` |
+| phase-2 storage/durability (storage concerns) | `phase-1-storage/*` |
+| phase-2 storage/durability (durability concerns) | `phase-3-durability/*` |
+| MVCC/locking concerns formerly embedded in older material | `phase-2-concurrency/*` |
+| phase-3 query optimization | `phase-4-optimizer/*` |
+| phase-4 query performance | `phase-5-performance-tuning/*` |
+| phase-5 scale/production | `phase-6-replication-ha-ops/*` |
 
-## Current migration status
+## Migration status
 - v2 phase folders 0–6 exist
-- every v2 phase now has:
+- every v2 phase has:
   - `README.md`
   - `read-1min.md`
   - `read-5min.md`
   - `read-10min.md`
   - `read-full.md`
-- legacy folders are retained as source material and backward compatibility reference
+- legacy phase folders have been retired and removed from the working tree
 
 ## Canonical reading path now
 1. `README.md`
@@ -50,10 +50,5 @@ The old structure had strong material, but it mixed some concerns that are bette
 5. `production-symptom-map.md`
 6. `cheatsheet.md`
 
-## Legacy policy
-Legacy phase folders are not removed yet. They remain useful for:
-- source material
-- backward compatibility
-- comparing old grouping vs v2 grouping
-
-But for new study flow, prefer v2 folders.
+## Notes
+The historical mapping remains documented here so the phase-number transition is still understandable even though the old folders are no longer present.

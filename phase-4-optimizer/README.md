@@ -17,7 +17,6 @@
 - EXPLAIN and EXPLAIN ANALYZE
 
 ## Primary reading
-- Original source material: `../phase-3-query-optimization/README.md`
 - Canonical sequence: `../roadmap-v2.md`
 
 ## Expected outputs

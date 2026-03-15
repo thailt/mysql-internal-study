@@ -16,7 +16,6 @@
 - InnoDB vs MyISAM at system level
 
 ## Primary reading
-- Original material: `../phase-1-architecture/README.md`
 - Canonical sequence: `../roadmap-v2.md`
 - First-principles framing: `../first-principles-learning.md`
 

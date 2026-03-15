@@ -19,7 +19,6 @@
 - page split / merge
 
 ## Primary reading
-- Original source material: `../phase-2-storage-durability/README.md` sections 2.1 and 2.2
 - Canonical sequence: `../roadmap-v2.md`
 - Cheatsheet: `../cheatsheet.md`
 
