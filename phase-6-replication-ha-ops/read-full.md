@@ -1,5 +1,21 @@
 # Phase 6 — Replication / HA / Operations (Full)
 
+```mermaid
+flowchart TD
+    A[Single node limits] --> B[Need change propagation]
+    B --> C[Binlog]
+    C --> D[Replication]
+    D --> E[Async]
+    D --> F[Semi-sync]
+    D --> G[Group Replication / Cluster]
+    A --> H[Need recovery]
+    H --> I[Backup]
+    I --> J[PITR]
+    A --> K[Need operability]
+    K --> L[Observability]
+    L --> M[Runbooks / Health Checks]
+```
+
 ## 1. Why this phase exists
 
 So far, the roadmap can explain how a single MySQL server stores data, handles concurrency, survives crashes, and chooses plans.

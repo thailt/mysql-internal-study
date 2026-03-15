@@ -1,5 +1,17 @@
 # Phase 1 — Storage (5 minutes)
 
+```mermaid
+flowchart TD
+    A[Disk is slow] --> B[Need page-oriented I/O]
+    B --> C[Pages]
+    C --> D[Buffer Pool]
+    C --> E[B+ Tree]
+    E --> F[Clustered Index]
+    E --> G[Secondary Index]
+    G --> H[Bookmark Lookup]
+    D --> I[Cache hot pages in RAM]
+```
+
 ## The first-principles question
 
 > Disk is slow, RAM is fast. How does InnoDB store and retrieve data efficiently enough for OLTP?

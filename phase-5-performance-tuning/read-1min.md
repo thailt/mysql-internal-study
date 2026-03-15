@@ -3,6 +3,24 @@
 ## Core idea
 Performance tuning starts from symptoms, not from random tweaks.
 
+```mermaid
+flowchart TD
+    A[Slow behavior] --> B[Classify bottleneck]
+    B --> C[Plan issue]
+    B --> D[Lock / contention]
+    B --> E[I/O pressure]
+    B --> F[Memory / temp work]
+    C --> G[Inspect plan]
+    D --> H[Inspect waits / locks]
+    E --> I[Inspect buffer pool / file I/O]
+    F --> J[Inspect temp/sort/memory]
+    G --> K[Smallest safe fix]
+    H --> K
+    I --> K
+    J --> K
+    K --> L[Measure before / after]
+```
+
 ## The essential chain
 
 ```text

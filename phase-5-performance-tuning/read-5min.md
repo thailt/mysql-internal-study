@@ -1,5 +1,23 @@
 # Phase 5 — Performance Tuning (5 minutes)
 
+```mermaid
+flowchart TD
+    A[Slow behavior] --> B[Classify bottleneck]
+    B --> C[Plan issue]
+    B --> D[Lock / contention]
+    B --> E[I/O pressure]
+    B --> F[Memory / temp work]
+    C --> G[Inspect plan]
+    D --> H[Inspect waits / locks]
+    E --> I[Inspect buffer pool / file I/O]
+    F --> J[Inspect temp/sort/memory]
+    G --> K[Smallest safe fix]
+    H --> K
+    I --> K
+    J --> K
+    K --> L[Measure before / after]
+```
+
 ## The first-principles question
 
 > When the system is slow, how do we know what to change without guessing blindly?

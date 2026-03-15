@@ -3,6 +3,23 @@
 ## Core idea
 Durability exists because RAM is volatile.
 
+```mermaid
+flowchart TD
+    A[Updates happen in memory] --> B[RAM is volatile]
+    B --> C[Need durable path]
+    C --> D[WAL]
+    D --> E[Redo Log]
+    E --> F[LSN]
+    F --> G[Checkpoint]
+    G --> H[Redo space reusable]
+    A --> I[Dirty Pages]
+    I --> J[Doublewrite]
+    J --> K[Torn-page protection]
+    E --> L[Crash Recovery]
+    L --> M[Redo committed work]
+    L --> N[Undo incomplete work]
+```
+
 If a transaction commits, the database must survive crash and still recover that committed change.
 
 ## The essential chain

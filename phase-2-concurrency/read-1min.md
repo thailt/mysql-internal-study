@@ -3,6 +3,20 @@
 ## Core idea
 Concurrency exists because many users touch the same data at the same time.
 
+```mermaid
+flowchart TD
+    A[Many concurrent readers/writers] --> B[Need correctness + throughput]
+    B --> C[Transactions]
+    C --> D[Isolation]
+    D --> E[MVCC]
+    E --> F[Undo Log]
+    E --> G[Read View]
+    C --> H[Locks]
+    H --> I[Record Lock]
+    H --> J[Gap / Next-Key Lock]
+    H --> K[Deadlock Detection]
+```
+
 The database must solve two problems at once:
 
 ```text

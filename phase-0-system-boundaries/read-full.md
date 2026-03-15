@@ -1,5 +1,17 @@
 # Phase 0 — System Boundaries (Full)
 
+```mermaid
+flowchart LR
+    C[Client / Protocol] --> S[Session / Connection]
+    S --> SQL[SQL Layer]
+    SQL --> P[Parser]
+    SQL --> O[Optimizer]
+    SQL --> E[Executor]
+    E --> H[Handler API]
+    H --> I[Storage Engine]
+    I --> D[Disk + Memory]
+```
+
 ## 1. Why this phase comes before everything else
 
 If you start learning MySQL by memorizing isolated components, you usually end up with fragmented knowledge.

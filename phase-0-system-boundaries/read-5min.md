@@ -1,5 +1,17 @@
 # Phase 0 — System Boundaries (5 minutes)
 
+```mermaid
+flowchart LR
+    C[Client / Protocol] --> S[Session / Connection]
+    S --> SQL[SQL Layer]
+    SQL --> P[Parser]
+    SQL --> O[Optimizer]
+    SQL --> E[Executor]
+    E --> H[Handler API]
+    H --> I[Storage Engine]
+    I --> D[Disk + Memory]
+```
+
 ## The first-principles question
 
 > Before asking how MySQL stores, locks, or recovers data, what is the system actually made of?

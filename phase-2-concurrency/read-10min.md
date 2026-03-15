@@ -1,5 +1,19 @@
 # Phase 2 — Concurrency (10 minutes)
 
+```mermaid
+flowchart TD
+    A[Many concurrent readers/writers] --> B[Need correctness + throughput]
+    B --> C[Transactions]
+    C --> D[Isolation]
+    D --> E[MVCC]
+    E --> F[Undo Log]
+    E --> G[Read View]
+    C --> H[Locks]
+    H --> I[Record Lock]
+    H --> J[Gap / Next-Key Lock]
+    H --> K[Deadlock Detection]
+```
+
 ## The root problem
 
 A database is shared mutable state.

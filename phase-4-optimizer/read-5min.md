@@ -1,5 +1,22 @@
 # Phase 4 — Optimizer (5 minutes)
 
+```mermaid
+flowchart TD
+    A[Declarative SQL] --> B[Many candidate plans]
+    B --> C[Statistics / Cardinality]
+    B --> D[Cost Model]
+    B --> E[Join Order]
+    B --> F[Access Path Selection]
+    C --> G[Estimated cost]
+    D --> G
+    E --> G
+    F --> G
+    G --> H[Chosen Plan]
+    H --> I[EXPLAIN]
+    H --> J[EXPLAIN ANALYZE]
+    H --> K[Optimizer Trace]
+```
+
 ## The first-principles question
 
 > If the same SQL can run in multiple ways, how does MySQL decide which path is best?

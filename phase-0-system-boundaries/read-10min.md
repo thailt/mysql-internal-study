@@ -1,5 +1,17 @@
 # Phase 0 — System Boundaries (10 minutes)
 
+```mermaid
+flowchart LR
+    C[Client / Protocol] --> S[Session / Connection]
+    S --> SQL[SQL Layer]
+    SQL --> P[Parser]
+    SQL --> O[Optimizer]
+    SQL --> E[Executor]
+    E --> H[Handler API]
+    H --> I[Storage Engine]
+    I --> D[Disk + Memory]
+```
+
 ## The root problem
 
 MySQL is often taught as a bag of features:

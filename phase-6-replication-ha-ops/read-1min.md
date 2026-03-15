@@ -3,6 +3,22 @@
 ## Core idea
 One MySQL server is not enough for scale, failover, backup, and operational safety.
 
+```mermaid
+flowchart TD
+    A[Single node limits] --> B[Need change propagation]
+    B --> C[Binlog]
+    C --> D[Replication]
+    D --> E[Async]
+    D --> F[Semi-sync]
+    D --> G[Group Replication / Cluster]
+    A --> H[Need recovery]
+    H --> I[Backup]
+    I --> J[PITR]
+    A --> K[Need operability]
+    K --> L[Observability]
+    L --> M[Runbooks / Health Checks]
+```
+
 ## The essential chain
 
 ```text

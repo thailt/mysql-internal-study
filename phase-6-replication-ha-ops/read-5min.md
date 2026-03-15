@@ -1,5 +1,21 @@
 # Phase 6 — Replication / HA / Operations (5 minutes)
 
+```mermaid
+flowchart TD
+    A[Single node limits] --> B[Need change propagation]
+    B --> C[Binlog]
+    C --> D[Replication]
+    D --> E[Async]
+    D --> F[Semi-sync]
+    D --> G[Group Replication / Cluster]
+    A --> H[Need recovery]
+    H --> I[Backup]
+    I --> J[PITR]
+    A --> K[Need operability]
+    K --> L[Observability]
+    L --> M[Runbooks / Health Checks]
+```
+
 ## The first-principles question
 
 > A single MySQL server will eventually fail, saturate, or be operated incorrectly. How do we keep data available, recoverable, and observable?

@@ -1,5 +1,22 @@
 # Phase 3 — Durability (5 minutes)
 
+```mermaid
+flowchart TD
+    A[Updates happen in memory] --> B[RAM is volatile]
+    B --> C[Need durable path]
+    C --> D[WAL]
+    D --> E[Redo Log]
+    E --> F[LSN]
+    F --> G[Checkpoint]
+    G --> H[Redo space reusable]
+    A --> I[Dirty Pages]
+    I --> J[Doublewrite]
+    J --> K[Torn-page protection]
+    E --> L[Crash Recovery]
+    L --> M[Redo committed work]
+    L --> N[Undo incomplete work]
+```
+
 ## The first-principles question
 
 > If memory is volatile, what does COMMIT really mean, and how can the engine survive a crash?

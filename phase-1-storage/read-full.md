@@ -1,5 +1,17 @@
 # Phase 1 — Storage (Full)
 
+```mermaid
+flowchart TD
+    A[Disk is slow] --> B[Need page-oriented I/O]
+    B --> C[Pages]
+    C --> D[Buffer Pool]
+    C --> E[B+ Tree]
+    E --> F[Clustered Index]
+    E --> G[Secondary Index]
+    G --> H[Bookmark Lookup]
+    D --> I[Cache hot pages in RAM]
+```
+
 ## 1. Why storage is the first real engine problem
 
 A relational database promises durable data and fast access.
