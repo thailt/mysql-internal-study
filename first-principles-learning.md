@@ -1,175 +1,197 @@
 # MySQL theo First Principles
 
-Học từ **chân lý nền** (vật lý, ràng buộc, bài toán gốc), rồi suy ra từng thành phần. Không bắt đầu bằng "MySQL có buffer pool", mà bằng "tại sao mọi engine kiểu InnoDB đều cần thứ giống buffer pool".
+Học từ **chân lý nền** (vật lý, ràng buộc, bài toán gốc), rồi suy ra từng cơ chế. Không bắt đầu bằng “MySQL có buffer pool”, mà bắt đầu bằng “vì sao một database engine buộc phải cần thứ như buffer pool?”.
+
+---
+
+## Cách dùng file này
+
+Đây là **canonical first-principles map** của repo.
+
+Thứ tự dùng nên là:
+1. `README.md`
+2. `roadmap-v2.md`
+3. file này
+4. phase README hiện tại
+5. reading ladder của phase đó (`read-1min` -> `read-full`)
 
 ---
 
 ## Bước 0: Đặt câu hỏi đúng
 
 - Sai: "InnoDB buffer pool là gì?"
-- Đúng: "Để đọc/ghi dữ liệu bền vững, hệ thống phải giải quyết những vấn đề gốc nào? Rồi InnoDB chọn giải pháp gì?"
+- Đúng: "Một database engine cần giải quyết những bài toán gốc nào, rồi InnoDB chọn giải pháp gì?"
 
 ---
 
-## Nguyên lý 0: Hệ thống và ranh giới — Trước khi tối ưu, phải biết máy chạy thế nào
+## Nguyên lý 0: Hệ thống và ranh giới
 
 **Sự thật:**
-- Một process (`mysqld`) phải xử lý SQL, quản lý kết nối, và đọc/ghi dữ liệu.
-- SQL là ngôn ngữ trừu tượng; disk/engine là nơi dữ liệu thật sự nằm.
-- Nhiều engine (InnoDB, MyISAM, …) với trade-off khác nhau.
+- Một process (`mysqld`) phải xử lý connection, SQL, execution coordination, và tương tác với storage engine.
+- SQL là tầng logic; engine là nơi dữ liệu thật sự được truy cập/lưu trữ.
+- Không có bản đồ layer thì mọi internals phía sau đều dễ bị lẫn.
 
 **Suy ra:**
-1. Phải **tách lớp**: lớp SQL (parser, optimizer, executor) độc lập với lớp lưu trữ (engine).
-2. **Handler API** = hợp đồng giữa server và engine; server không biết chi tiết engine.
-3. **Luồng query**: Client → Connection → Parser → Optimizer → Executor → Handler API → Engine → Disk/RAM.
-4. Không nắm được bản đồ này thì mọi câu hỏi "tại sao InnoDB làm X?" sẽ thiếu ngữ cảnh.
+1. Phải tách được **SQL layer** và **storage engine layer**.
+2. Phải hiểu **handler API** là boundary giữa hai tầng.
+3. Phải nắm luồng query end-to-end: client -> parser -> optimizer -> executor -> handler -> engine.
 
-**Ánh xạ:** Phase 1 — Server Architecture (1.1), Client Protocol (1.2), Thread Model (1.3), Query Execution Flow (1.4), Storage Engine Layer (1.5), InnoDB vs MyISAM (1.6). Đọc Phase 1 **trước** khi đi sâu bất kỳ phase nào.
+**Ánh xạ v2:**
+- `phase-0-system-boundaries/`
 
 ---
 
 ## Nguyên lý 1: Lưu trữ — Disk chậm, RAM nhanh
 
 **Sự thật:**
-- Disk: latency ms, throughput có giới hạn.
-- RAM: latency ns, throughput cao hơn nhiều.
-- Ứng dụng cần đọc/ghi **theo đơn vị nhỏ** (row), nhưng disk hiệu quả khi I/O **theo khối lớn** (block).
+- Disk chậm hơn RAM rất nhiều.
+- Đọc/ghi theo row trực tiếp trên disk là không thực tế.
+- Cache trong RAM là bắt buộc nếu muốn hiệu năng tốt.
 
 **Suy ra:**
-1. Phải có **đơn vị I/O** (page/block) — không đọc từng row từ disk.
-2. Phải có **cache trong RAM** để giảm đọc disk.
-3. Cache hữu hạn → cần **chính sách thay thế** (LRU hoặc biến thể).
-4. Dữ liệu sửa trong RAM chưa kịp ghi xuống disk → **dirty page** và **flush**.
+1. Phải có **đơn vị I/O** là page/block.
+2. Phải có **page cache trong RAM** -> buffer pool.
+3. Phải có **cấu trúc tổ chức dữ liệu** để tìm page nhanh -> B+ tree.
+4. Phải phân biệt clustered index và secondary index.
 
-**Ánh xạ:** Phase 2.1 — Page I/O & Buffer Pool. Buffer pool = cache; page 16KB = đơn vị I/O; LRU (young/old) = eviction; flush list + adaptive flushing. Tự trả lời trước: "nếu mình viết engine, mình sẽ cache thế nào?".
+**Ánh xạ v2:**
+- `phase-1-storage/`
 
 ---
 
-## Nguyên lý 2: Tìm dữ liệu — Scan O(n) không chấp nhận được
+## Nguyên lý 2: Đồng thời — Nhiều actor, một dữ liệu chia sẻ
 
 **Sự thật:**
-- Full scan = O(n) row (hoặc O(n) page).
-- Cần **point lookup** (theo key) và **range scan** (theo khoảng) với cost gần O(log n).
+- Nhiều transaction cùng đọc/ghi một kho dữ liệu.
+- Nếu khóa mọi thứ để an toàn thì throughput sụp.
+- Nếu không khóa/không versioning thì kết quả trở nên khó chấp nhận.
 
 **Suy ra:**
-1. Cần **cấu trúc có thứ tự** trên key.
-2. Cấu trúc đó phải **cân bằng** để không bị thoái hóa (linked list).
-3. Range scan hiệu quả → **leaf level phải liên kết** (không phải leo lên root mỗi lần) → B+ tree.
-4. Có **một cách sắp xếp "chính"** chứa full row (clustered); các cách truy cập khác chỉ cần key + con trỏ tới bản gốc (secondary index → PK).
+1. Phải có **transaction boundary**.
+2. Phải có **visibility rules** -> isolation.
+3. Readers nhiều khi cần snapshot thay vì block writers -> MVCC.
+4. Cần **undo log** và **read view** cho snapshot reads.
+5. Writers/ranges vẫn cần lock -> record/gap/next-key locks.
+6. Cyclic wait là tự nhiên -> deadlock detection.
 
-**Ánh xạ:** Phase 2.2 — B+ Tree & Data Organization. Clustered index = PK; secondary index = (key → PK); bookmark lookup. Vẽ trên giấy: bảng (id, name, dept) — clustered và secondary index trên dept trông thế nào?
+**Ánh xạ v2:**
+- `phase-2-concurrency/`
 
 ---
 
-## Nguyên lý 3: Đồng thời — Nhiều client, một kho dữ liệu
+## Nguyên lý 3: Bền vững — Commit rồi thì phải sống sót qua crash
 
 **Sự thật:**
-- Nhiều transaction cùng lúc đọc/ghi.
-- Nếu khóa toàn bảng → throughput thấp.
-- Cần **isolation**: kết quả phải có thể giải thích được (serializable hoặc snapshot).
+- RAM mất khi crash/power loss.
+- Ghi trực tiếp page ra data file mỗi commit là quá đắt.
+- Page write có thể bị torn khi crash giữa chừng.
 
 **Suy ra:**
-1. **Readers không chặn writers, writers không chặn readers** trừ khi cần đảm bảo nhất quán → cần **phiên bản dữ liệu** (multi-version).
-2. Phiên bản cũ không xóa ngay → cần **undo log** để vừa rollback vừa phục vụ đọc snapshot.
-3. **Snapshot** = tại thời điểm T, "tôi thấy tập transaction nào đã commit?" → **read view**.
-4. Writer phải **khóa** để hai writer không sửa cùng row/gap → record lock, gap lock (tránh phantom).
-5. Khóa nhiều thứ theo thứ tự khác nhau → **deadlock**; cần phát hiện và phá (rollback một bên).
+1. Phải **ghi log trước** -> WAL.
+2. Phải có **redo log** để recover committed changes.
+3. Phải có **LSN** và **checkpoint** để quản lý tiến độ durability.
+4. Phải có **doublewrite** để bảo vệ page integrity.
+5. Recovery sẽ là **redo committed work + undo incomplete work**.
 
-**Ánh xạ:** Phase 2 (trong các tài liệu InnoDB) hoặc phase riêng Concurrency — MVCC, undo log, read view (RR vs RC), record/gap/next-key lock, deadlock detection. Tự thiết kế trước: "làm sao để SELECT không block UPDATE và ngược lại?".
+**Ánh xạ v2:**
+- `phase-3-durability/`
 
 ---
 
-## Nguyên lý 4: Bền vững — Commit rồi thì không mất khi crash
+## Nguyên lý 4: Chọn kế hoạch thực thi — Cùng một SQL có nhiều cách chạy
 
 **Sự thật:**
-- RAM mất khi tắt máy; disk (và fsync) tồn tại.
-- Ghi trực tiếp page từ RAM xuống đúng vị trí file rất dễ bị **torn write** (crash giữa chừng → nửa page cũ, nửa mới).
+- Một query có thể có nhiều execution plans.
+- Chênh lệch cost giữa các plan có thể rất lớn.
+- Plan tốt phụ thuộc vào statistics/cardinality, join order, access path.
 
 **Suy ra:**
-1. **Commit = cam kết** rằng sau khi server chết, khi khởi động lại vẫn thấy thay đổi đã commit.
-2. Cách an toàn: **ghi log thay đổi trước** (write-ahead), rồi mới coi là "đã commit". Khi crash, **replay log** để tái tạo.
-3. Log tuần tự, append-only → **redo log**. Vị trí trong log = **LSN**.
-4. Chỉ khi dirty page đã flush hết tới một LSN thì đoạn log trước đó mới có thể tái sử dụng → **checkpoint**.
-5. Torn page: ghi page qua **vùng trung gian** (doublewrite) rồi mới ghi vào đích; recovery dùng bản lành từ doublewrite.
+1. Cần **cost-based optimizer**.
+2. Cần statistics/cardinality để đánh giá candidate plans.
+3. Join order là quyết định hạng nhất.
+4. Phải đọc được `EXPLAIN`, `EXPLAIN ANALYZE`, và khi cần thì `optimizer trace`.
 
-**Ánh xạ:** Phase 2.3 (WAL & Redo Log), Phase 2.4 (Checkpoint, Doublewrite & Crash Recovery). Tự trả lời: "sau khi kill -9, khi mysqld start lại, nó làm từng bước gì?".
+**Ánh xạ v2:**
+- `phase-4-optimizer/`
 
 ---
 
-## Nguyên lý 5: Chọn kế hoạch thực thi — Nhiều cách chạy một query, chọn thế nào?
+## Nguyên lý 5: Tuning — “Slow” là symptom, không phải diagnosis
 
 **Sự thật:**
-- Một query có thể có **nhiều plan** (full scan vs index, join order A vs B, NLJ vs Hash Join).
-- Chọn sai plan → chênh lệch thời gian hàng bậc (ms vs giây).
-- Con người không thể liệt kê hết; cần **mô hình cost** và **tìm kiếm không gian plan**.
+- Chậm có thể do plan, lock, I/O, CPU, memory, temp work, workload shape.
+- Thay đổi bừa rất dễ sửa sai chỗ hoặc tạo side effects mới.
 
 **Suy ra:**
-1. **Cost-based optimizer**: ước lượng cost (I/O, CPU, memory) cho từng candidate plan, chọn cost thấp nhất.
-2. Cost model = bảng hằng số (server_cost, engine_cost) + thống kê (số row, selectivity).
-3. Cần **đọc plan** (EXPLAIN, EXPLAIN ANALYZE) để kiểm chứng và debug.
-4. Index đúng = giảm cost; SQL không sargable = optimizer không tận dụng được index.
+1. Phải bắt đầu bằng **bottleneck classification**.
+2. Phải nối symptom -> mechanism -> evidence -> smallest safe change.
+3. Phải phân biệt plan issue với contention issue.
+4. Phải đo **before/after**, không tune bằng cảm giác.
 
-**Ánh xạ:** Phase 3 (Query Optimization), Phase 4 (Query Performance) — 3.1/4.1 Optimizer, 3.2/4.2 Execution Plan, 3.3/4.3 Index Strategy, 3.4/4.4 Query Rewrite. Tự hỏi trước: "với JOIN 3 bảng, có bao nhiêu thứ tự join? Optimizer loại trừ thế nào?".
+**Ánh xạ v2:**
+- `phase-5-performance-tuning/`
+- `production-symptom-map.md`
 
 ---
 
-## Nguyên lý 6: Mở rộng và sẵn sàng — Một server có giới hạn
+## Nguyên lý 6: Mở rộng / HA / Operations — Một server không đủ
 
 **Sự thật:**
-- Một instance có giới hạn throughput, single point of failure, và giới hạn quan sát.
-- Cần **chia sẻ thay đổi** cho server khác (replication), **sống sót khi chết** (HA), **phục hồi sai lỗi** (backup/PITR), **thấy rõ đang xảy ra gì** (observability).
+- Một node có giới hạn capacity, availability, recovery, observability.
+- Replication, HA, backup/PITR, runbooks đều là một phần của production reality.
 
 **Suy ra:**
-1. **Binary log** = stream thay đổi có thứ tự; replica áp dụng để đồng bộ. Redo + binlog phải nhất quán → **two-phase commit (XA)**.
-2. **Replication**: async (nhanh, rủi ro mất dữ liệu), semi-sync (an toàn hơn, latency cao hơn), Group Replication (consensus, failover tự động).
-3. **Backup + PITR**: logical (mysqldump) hoặc physical (XtraBackup, CLONE); replay binlog tới thời điểm cần.
-4. **Observability**: Performance Schema, sys schema — không tối ưu được thứ không đo được.
+1. Phải phân biệt **redo log** và **binlog**.
+2. Phải hiểu **async vs semi-sync** là trade-off latency/safety.
+3. Phải hiểu **replication is not backup**.
+4. Phải có **backup + PITR**.
+5. Phải có **observability + operational runbook**.
 
-**Ánh xạ:** Phase 5 — 5.1 Binary Log, 5.2 Replication & HA, 5.3 Backup & Recovery, 5.4 Observability & Troubleshooting. Tự hỏi: "server chết lúc 12:00:05, replica lag 2s — failover xong mất tối đa bao nhiêu commit?".
-
----
-
-## Thứ tự học đề xuất (first principles → implementation)
-
-| Bước | Nguyên lý | Câu hỏi first principle | Đọc (phase.topic) |
-|------|-----------|--------------------------|-------------------|
-| 0 | Hệ thống & ranh giới | Luồng query đi qua đâu? Tại sao tách SQL và engine? | Phase 1 (1.1–1.6) |
-| 1 | Lưu trữ | Cache disk trong RAM thế nào? Đơn vị I/O? Eviction? Dirty flush? | Phase 2.1 |
-| 2 | Tìm dữ liệu | Tìm theo key/range O(log n)? Một bảng có mấy cây? Bookmark lookup? | Phase 2.2 |
-| 3 | Đồng thời | Đọc snapshot không block ghi; ghi cần khóa gì? Phantom? Deadlock? | (Phase 2 / tài liệu MVCC & Locking) |
-| 4 | Bền vững | Commit = gì trên disk? Crash xong khởi động lại làm gì? Torn page? | Phase 2.3, 2.4 |
-| 5 | Chọn plan | Nhiều plan cho một query — optimizer chọn thế nào? Cost? EXPLAIN? | Phase 3, Phase 4 |
-| 6 | Mở rộng & HA | Chia sẻ thay đổi? Failover? Backup/PITR? Đo đạc? | Phase 5 |
+**Ánh xạ v2:**
+- `phase-6-replication-ha-ops/`
 
 ---
 
-## Cách áp dụng
+## Thứ tự học đề xuất (v2)
 
-- Với **mỗi topic** trong mỗi phase: viết ra 1–2 câu hỏi "tại sao phải có thứ này?" / "bài toán gốc là gì?".
-- Tự trả lời bằng **nguyên lý** (disk/RAM, O(log n), isolation, durability, cost, scale) trước khi mở MySQL docs hoặc README phase.
-- Sau đó đọc docs/README để xem **MySQL/InnoDB chọn implementation cụ thể thế nào**.
-- Lab: dùng để **kiểm chứng** nguyên lý (ví dụ: thấy LSN tăng khi commit; thấy gap lock chặn phantom trong RR).
+| Bước | Nguyên lý | Câu hỏi first-principles | Phase v2 |
+|---|---|---|---|
+| 0 | Hệ thống & ranh giới | Query đi qua những layer nào? SQL layer và engine khác nhau ở đâu? | `phase-0-system-boundaries` |
+| 1 | Lưu trữ | Vì sao cần page, buffer pool, B+ tree? | `phase-1-storage` |
+| 2 | Đồng thời | Làm sao readers/writers cùng tồn tại mà vẫn đúng? | `phase-2-concurrency` |
+| 3 | Bền vững | Commit thực sự nghĩa là gì khi crash? | `phase-3-durability` |
+| 4 | Chọn plan | Vì sao optimizer chọn plan này? | `phase-4-optimizer` |
+| 5 | Tuning | Slow là do plan, lock, I/O hay gì khác? | `phase-5-performance-tuning` |
+| 6 | Scale / HA / Ops | Làm sao chạy MySQL an toàn ngoài single-node world? | `phase-6-replication-ha-ops` |
 
 ---
 
-## Progress tracker (First Principles)
+## Progress tracker (v2)
 
 | # | Nguyên lý | Phase | Status |
-|---|-----------|-------|--------|
-| 0 | Hệ thống & ranh giới | 1 | [ ] |
-| 1 | Lưu trữ (page, buffer pool) | 2.1 | [ ] |
-| 2 | Tìm dữ liệu (B+ tree) | 2.2 | [ ] |
-| 3 | Đồng thời (MVCC, locking) | 2 / tài liệu | [ ] |
-| 4 | Bền vững (WAL, redo, doublewrite) | 2.3, 2.4 | [ ] |
-| 5 | Chọn plan (optimizer, index) | 3, 4 | [ ] |
-| 6 | Mở rộng & HA (binlog, replication, backup, observability) | 5 | [ ] |
+|---|---|---|---|
+| 0 | Hệ thống & ranh giới | `phase-0-system-boundaries` | [ ] |
+| 1 | Lưu trữ | `phase-1-storage` | [ ] |
+| 2 | Đồng thời | `phase-2-concurrency` | [ ] |
+| 3 | Bền vững | `phase-3-durability` | [ ] |
+| 4 | Chọn plan | `phase-4-optimizer` | [ ] |
+| 5 | Tuning | `phase-5-performance-tuning` | [ ] |
+| 6 | Mở rộng / HA / Ops | `phase-6-replication-ha-ops` | [ ] |
 
 ---
 
 ## Tóm lại
 
-**First principles (theo thứ tự):**  
-0. Hệ thống & ranh giới (Phase 1) → 1. Lưu trữ (2.1) → 2. Tìm dữ liệu (2.2) → 3. Đồng thời (MVCC, lock) → 4. Bền vững (2.3, 2.4) → 5. Chọn plan (Phase 3, 4) → 6. Mở rộng & HA (Phase 5).
+Nếu phải nhớ một chuỗi duy nhất, hãy nhớ:
 
-**Không:** Học theo checklist "buffer pool → B+ tree → lock" mà không hỏi tại sao.  
-**Có:** "Tại sao cần cache? → Eviction thế nào? → InnoDB làm bằng buffer pool và LRU thế này." Dùng file này làm **khung hỏi đáp** trước khi đọc từng phase.
+```text
+System
+-> Storage
+-> Concurrency
+-> Durability
+-> Optimizer
+-> Performance Tuning
+-> Replication / HA / Operations
+```
+
+Đây là xương sống của roadmap v2.

@@ -1,45 +1,86 @@
 # MySQL Internals Deep Dive
 
-A first-principles, hands-on learning plan to deeply understand MySQL internals — targeting System Architect / Staff Engineer level knowledge.
+A first-principles, hands-on learning repo for deeply understanding MySQL internals with production and architect-level relevance.
 
-## First Principles Approach
+## Canonical entry points
 
-Instead of studying components in isolation, this plan follows **constraint chains** — each phase starts from a fundamental physical constraint and derives the engineering solutions that follow from it.
+Start in this order:
+1. [roadmap-v2.md](roadmap-v2.md)
+2. [first-principles-learning.md](first-principles-learning.md)
+3. current phase README
+4. [production-symptom-map.md](production-symptom-map.md)
+5. [cheatsheet.md](cheatsheet.md)
 
-**Recommended learning order:** follow **[first-principles-learning.md](first-principles-learning.md)** — each step starts with a *question* (e.g. "Cache disk in RAM how?") then maps to phase/topic. Use the table "Thứ tự học đề xuất" and "Progress tracker" there.
+## Roadmap v2
 
+```text
+0. System boundaries
+1. Storage
+2. Concurrency
+3. Durability
+4. Optimizer
+5. Performance tuning
+6. Replication / HA / Operations
 ```
-Physical reality                    Engineering consequence
-─────────────────                   ──────────────────────
-Understand the machine first    →  Phase 1: The Big Picture
 
-Disk is 1000x slower than RAM   →  Phase 2: Storage & Durability
-Memory is lost on crash         ↗
+## Why v2
 
-Need to find 1 row in millions  →  Phase 3 & 4: Query Optimization / Performance
+The v2 roadmap makes the learning path better aligned with real backend production work:
+- makes **concurrency / MVCC / locking** a first-class phase
+- separates **optimizer internals** from **performance diagnosis and tuning**
+- adds explicit bridges from internals to **production symptoms** and **operational decisions**
 
-Single server has limits        →  Phase 5: Scale, HA & Production
-```
+## Repo structure
 
-## Project Structure
-
-```
+```text
 .
 ├── README.md
-├── docker/                            # Lab environment
-│   ├── docker-compose.yml             # MySQL 8.4 container
-│   ├── conf/my.cnf                    # Custom MySQL config
-│   ├── init/01-sample-data.sql        # Seed data
-│   └── README.md                      # Lab usage guide
-├── first-principles-learning.md       # Canonical order: question → principle → phase
-├── phase-1-architecture/              # Week 1–2: The Big Picture (Principle 0)
-├── phase-2-storage-durability/        # Week 3–5: The Disk Problem (Principles 1, 2, 4)
-├── phase-3-query-optimization/        # Week 6–7: Query Optimizer (Principle 5)
-├── phase-4-query-performance/         # Week 8–9: The Search Problem (Principle 5)
-└── phase-5-scale-production/          # Week 10+: Scale, HA & Production (Principle 6)
+├── roadmap-v2.md
+├── first-principles-learning.md
+├── production-symptom-map.md
+├── cheatsheet.md
+├── docker/
+├── phase-0-system-boundaries/
+├── phase-1-storage/
+├── phase-2-concurrency/
+├── phase-3-durability/
+├── phase-4-optimizer/
+├── phase-5-performance-tuning/
+├── phase-6-replication-ha-ops/
+└── legacy-phase-materials (kept implicitly via original phase folders below)
 ```
 
-## Lab Environment
+## Current v2 phase map
+
+### Phase 0 — System Boundaries
+- `phase-0-system-boundaries/README.md`
+- original source material: `phase-1-architecture/README.md`
+
+### Phase 1 — Storage
+- `phase-1-storage/README.md`
+- source material: storage parts of `phase-2-storage-durability/README.md`
+
+### Phase 2 — Concurrency
+- `phase-2-concurrency/README.md`
+- new explicit backbone in v2
+
+### Phase 3 — Durability
+- `phase-3-durability/README.md`
+- source material: durability parts of `phase-2-storage-durability/README.md`
+
+### Phase 4 — Optimizer
+- `phase-4-optimizer/README.md`
+- source material: `phase-3-query-optimization/README.md`
+
+### Phase 5 — Performance Tuning
+- `phase-5-performance-tuning/README.md`
+- source material: `phase-4-query-performance/README.md`
+
+### Phase 6 — Replication / HA / Operations
+- `phase-6-replication-ha-ops/README.md`
+- source material: `phase-5-scale-production/README.md`
+
+## Lab environment
 
 MySQL 8.4.3 running in Docker with `performance_schema` and InnoDB monitors enabled.
 
@@ -50,115 +91,21 @@ docker exec -it mysql-lab mysql -u root -prootpass lab
 
 See [docker/README.md](docker/README.md) for details.
 
-## Learning Roadmap (~10 weeks)
+## Definition of done
 
-### Phase 1: The Big Picture (Week 1–2)
+A phase is only done when all are true:
+- can explain the mechanism from first principles
+- can observe/reproduce it in lab
+- can connect it to production symptoms
+- can use it to make better architecture/tuning decisions
 
-> *Before solving problems, understand the machine.*
+## Migration and legacy mapping
 
-| # | Topic | Key Concepts |
-|---|-------|-------------|
-| 1.1 | Server Architecture | `mysqld` process, subsystems, memory areas |
-| 1.2 | Client Protocol | Handshake, COM_QUERY, connection lifecycle |
-| 1.3 | Thread Model | Thread-per-connection, background threads |
-| 1.4 | Query Execution Flow | Parser → Optimizer → Executor → Storage Engine |
-| 1.5 | Storage Engine Layer | Handler API, pluggable architecture |
-| 1.6 | InnoDB vs MyISAM | Trade-offs, why InnoDB won |
+- Migration guide: `MIGRATION_NOTES.md`
+- Canonical first-principles map: `first-principles-learning.md`
+- Legacy phase folders are kept as source material and backward compatibility reference.
+- New study flow should prefer the v2 phase folders.
 
-### Phase 2: The Disk Problem (Week 3–5)
+## Legacy note
 
-> *Disk is 1000x slower than memory, and memory is volatile. How do we build a fast, durable database?*
-
-| # | Topic | Constraint → Solution |
-|---|-------|----------------------|
-| 2.1 | Page I/O & Buffer Pool | Disk slow → cache pages in RAM, LRU eviction |
-| 2.2 | B+ Tree & Data Organization | Need fast lookup → tree where node = page = 1 I/O |
-| 2.3 | Write-Ahead Logging & Redo Log | Memory volatile → log changes before flush (WAL) |
-| 2.4 | Checkpoint, Doublewrite & Crash Recovery | Redo log finite → checkpoint; torn pages → doublewrite |
-
-### Phase 3: Query Optimization (Week 6–7)
-
-> *Many possible plans for one query. How does the optimizer choose the best one?* (First principle 5)
-
-| # | Topic | Constraint → Solution |
-|---|-------|----------------------|
-| 3.1 | Query Optimizer | Many plans → cost-based selection, join order, NLJ/Hash Join |
-| 3.2 | Execution Plan | Can't optimize blind → EXPLAIN, EXPLAIN ANALYZE |
-| 3.3 | Index Strategy | Full scan too slow → composite, covering, ICP |
-| 3.4 | Query Rewrite | Subquery → semi-join, derived merge, sargable predicates |
-
-### Phase 4: The Search Problem — Query Performance (Week 8–9)
-
-> *Finding specific data among millions of rows must be fast.* (First principle 5, deeper)
-
-| # | Topic | Constraint → Solution |
-|---|-------|----------------------|
-| 4.1 | How the Optimizer Thinks | Cost model, join algorithms, optimizer trace |
-| 4.2 | Reading Execution Plans | Access types, FORMAT=TREE/JSON, estimated vs actual |
-| 4.3 | Index Strategy | Composite, covering, ICP, skip scan, invisible index |
-| 4.4 | Query Rewrite & Anti-Patterns | Sargable predicates, anti-patterns |
-
-### Phase 5: The Scale Problem (Week 10+)
-
-> *A single server has limits in capacity, availability, and observability. How do we go beyond?*
-
-| # | Topic | Constraint → Solution |
-|---|-------|----------------------|
-| 5.1 | Binary Log & Change Propagation | Need to share changes → binlog, GTID, two-phase commit |
-| 5.2 | Replication & High Availability | Single point of failure → async/semi-sync, Group Replication |
-| 5.3 | Backup & Recovery | Data loss risk → logical/physical backup, PITR |
-| 5.4 | Observability & Troubleshooting | Can't fix what you can't see → Performance Schema, sys schema |
-
-## The Constraint Chain
-
-Every InnoDB design decision can be derived from a few physical constraints:
-
-```
-Disk is slow (100μs SSD, 10ms HDD vs 100ns RAM)
-  → Cache in RAM: Buffer Pool
-    → RAM is limited → eviction policy: LRU with midpoint insertion
-    → Modify in RAM → dirty pages
-      → Dirty pages lost on crash → Write-Ahead Logging (Redo Log)
-        → Redo log is finite → Checkpoint (flush dirty, reclaim log)
-        → Half-written page on crash → Doublewrite Buffer
-  → Organize for fast lookup: B+ Tree
-    → Node = page = 1 disk I/O → minimizes reads
-    → PK = data (clustered index) → 1 lookup for full row
-    → Secondary index stores PK → bookmark lookup (2 lookups)
-
-Multiple concurrent users
-  → Writers conflict → Locking (row, gap, next-key)
-    → Circular wait → Deadlock detection (wait-for graph)
-  → Readers blocked by locks → MVCC (lock-free reads)
-    → Old versions needed → Undo Log
-    → Which version to see? → Read View + visibility rules
-    → Old versions accumulate → Purge Thread
-
-Single server limits
-  → Share changes → Binary Log
-    → Deterministic → Row-Based Replication
-    → Redo log + binlog consistency → Two-Phase Commit (XA)
-  → Server dies → Replication + automatic failover
-  → Data corruption → Backup + Point-in-Time Recovery
-```
-
-## References
-
-| Source | Focus |
-|---|---|
-| *High Performance MySQL* (4th Ed) | Comprehensive, production-focused |
-| [MySQL Internals Manual](https://dev.mysql.com/doc/dev/mysql-server/latest/) | Official architecture docs |
-| [mysql/mysql-server](https://github.com/mysql/mysql-server) | InnoDB source code |
-| [Jeremy Cole's blog](https://blog.jcole.us/innodb/) | B+ Tree, page structure |
-| [Percona Blog](https://www.percona.com/blog/) | Real-world performance tuning |
-
-## Current Status
-
-- [x] Project initialized
-- [x] Docker lab running (MySQL 8.4.3, verified)
-- [x] First-principles learning path ([first-principles-learning.md](first-principles-learning.md))
-- [ ] Phase 1: The Big Picture
-- [ ] Phase 2: The Disk Problem
-- [ ] Phase 3: Query Optimization
-- [ ] Phase 4: Query Performance
-- [ ] Phase 5: The Scale Problem
+Original phase folders are kept for source material and backward compatibility while the repo transitions to roadmap v2 terminology and structure.
