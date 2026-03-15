@@ -26,6 +26,26 @@ What is the system?
             -> How do we run it safely at scale?
 ```
 
+## Roadmap diagram
+
+```mermaid
+flowchart LR
+    P0[Phase 0<br/>System Boundaries]
+    P1[Phase 1<br/>Storage]
+    P2[Phase 2<br/>Concurrency]
+    P3[Phase 3<br/>Durability]
+    P4[Phase 4<br/>Optimizer]
+    P5[Phase 5<br/>Performance Tuning]
+    P6[Phase 6<br/>Replication / HA / Operations]
+
+    P0 --> P1
+    P1 --> P2
+    P2 --> P3
+    P3 --> P4
+    P4 --> P5
+    P5 --> P6
+```
+
 ## Phase map
 
 ### Phase 0 — System Boundaries

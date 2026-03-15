@@ -21,6 +21,22 @@
 - deadlock detection
 - long transaction impact
 
+## Knowledge model
+
+```mermaid
+flowchart TD
+    A[Many concurrent readers/writers] --> B[Need correctness + throughput]
+    B --> C[Transactions]
+    C --> D[Isolation]
+    D --> E[MVCC]
+    E --> F[Undo Log]
+    E --> G[Read View]
+    C --> H[Locks]
+    H --> I[Record Lock]
+    H --> J[Gap / Next-Key Lock]
+    H --> K[Deadlock Detection]
+```
+
 ## Primary reading
 - Canonical sequence and first-principles framing: `../roadmap-v2.md`, `../first-principles-learning.md`
 - This phase is a new explicit backbone in v2 and should be developed as a dedicated content track.

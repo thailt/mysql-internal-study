@@ -17,6 +17,24 @@
 - observability
 - health check runbooks
 
+## Knowledge model
+
+```mermaid
+flowchart TD
+    A[Single node limits] --> B[Need change propagation]
+    B --> C[Binlog]
+    C --> D[Replication]
+    D --> E[Async]
+    D --> F[Semi-sync]
+    D --> G[Group Replication / Cluster]
+    A --> H[Need recovery]
+    H --> I[Backup]
+    I --> J[PITR]
+    A --> K[Need operability]
+    K --> L[Observability]
+    L --> M[Runbooks / Health Checks]
+```
+
 ## Primary reading
 - Cross-cutting reference: `../production-symptom-map.md`
 - Canonical sequence: `../roadmap-v2.md`

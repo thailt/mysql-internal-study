@@ -15,6 +15,20 @@
 - handler API
 - InnoDB vs MyISAM at system level
 
+## Knowledge model
+
+```mermaid
+flowchart LR
+    C[Client / Protocol] --> S[Session / Connection]
+    S --> SQL[SQL Layer]
+    SQL --> P[Parser]
+    SQL --> O[Optimizer]
+    SQL --> E[Executor]
+    E --> H[Handler API]
+    H --> I[Storage Engine]
+    I --> D[Disk + Memory]
+```
+
 ## Primary reading
 - Canonical sequence: `../roadmap-v2.md`
 - First-principles framing: `../first-principles-learning.md`
