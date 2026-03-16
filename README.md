@@ -1,18 +1,25 @@
 # MySQL Internals Deep Dive
 
-A first-principles, hands-on learning repo for deeply understanding MySQL internals with production and architect-level relevance.
+A bilingual, first-principles learning repo for understanding how MySQL works under the hood — from storage and MVCC to crash recovery, optimizer behavior, and production operations.
 
-## Canonical entry points
+## Choose your language
+- **English:** [en/README.md](en/README.md)
+- **Tiếng Việt:** [vi/README.md](vi/README.md)
 
-Start in this order:
-1. [roadmap-v2.md](roadmap-v2.md)
-2. [first-principles-learning.md](first-principles-learning.md)
-3. current phase README
-4. [production-symptom-map.md](production-symptom-map.md)
-5. [cheatsheet.md](cheatsheet.md)
+## What this repo is
+- a structured learning path, not a random notes dump
+- focused on MySQL internals with production relevance
+- organized around a v2 roadmap from system boundaries to replication / HA / ops
+- backed by a small Docker lab for hands-on experiments
 
-## Roadmap v2
+## Recommended path
+1. Pick a language landing page: [English](en/README.md) or [Tiếng Việt](vi/README.md)
+2. Read the roadmap
+3. Read the first-principles guide
+4. Work through the phase README for your current topic
+5. Use the production symptom map and cheatsheet as recurring references
 
+## Roadmap at a glance
 ```text
 0. System boundaries
 1. Storage
@@ -41,18 +48,12 @@ flowchart LR
     P5 --> P6
 ```
 
-## Why v2
-
-The v2 roadmap makes the learning path better aligned with real backend production work:
-- makes **concurrency / MVCC / locking** a first-class phase
-- separates **optimizer internals** from **performance diagnosis and tuning**
-- adds explicit bridges from internals to **production symptoms** and **operational decisions**
-
 ## Repo structure
-
 ```text
 .
 ├── README.md
+├── en/
+├── vi/
 ├── roadmap-v2.md
 ├── first-principles-learning.md
 ├── production-symptom-map.md
@@ -68,50 +69,25 @@ The v2 roadmap makes the learning path better aligned with real backend producti
 └── phase-6-replication-ha-ops/
 ```
 
-## Current v2 phase map
-
-### Phase 0 — System Boundaries
-- `phase-0-system-boundaries/README.md`
-
-### Phase 1 — Storage
-- `phase-1-storage/README.md`
-
-### Phase 2 — Concurrency
-- `phase-2-concurrency/README.md`
-
-### Phase 3 — Durability
-- `phase-3-durability/README.md`
-
-### Phase 4 — Optimizer
-- `phase-4-optimizer/README.md`
-
-### Phase 5 — Performance Tuning
-- `phase-5-performance-tuning/README.md`
-
-### Phase 6 — Replication / HA / Operations
-- `phase-6-replication-ha-ops/README.md`
+## Quick links
+- English roadmap: [en/roadmap-v2.md](en/roadmap-v2.md)
+- Vietnamese roadmap: [vi/roadmap-v2.md](vi/roadmap-v2.md)
+- English first-principles guide: [en/first-principles-learning.md](en/first-principles-learning.md)
+- Vietnamese first-principles guide: [vi/first-principles-learning.md](vi/first-principles-learning.md)
+- Docker lab: [docker/README.md](docker/README.md)
+- Publish-readiness review: [review/publish-readiness-review.md](review/publish-readiness-review.md)
 
 ## Lab environment
-
-MySQL 8.4.3 running in Docker with `performance_schema` and InnoDB monitors enabled.
+MySQL 8.4.3 runs in Docker with `performance_schema` and InnoDB monitors enabled.
 
 ```bash
 cd docker && docker compose up -d
 docker exec -it mysql-lab mysql -u root -prootpass lab
 ```
 
-See [docker/README.md](docker/README.md) for details.
+See [docker/README.md](docker/README.md) for setup details.
 
-## Definition of done
-
-A phase is only done when all are true:
-- can explain the mechanism from first principles
-- can observe/reproduce it in lab
-- can connect it to production symptoms
-- can use it to make better architecture/tuning decisions
-
-## Migration notes
-
-- Migration guide: `MIGRATION_NOTES.md`
-- Canonical first-principles map: `first-principles-learning.md`
-- The repo now uses the v2 phase structure only.
+## Scope note
+- The bilingual split currently covers repo-level docs and phase README navigation.
+- The deeper reading ladder files (`read-1min`, `read-5min`, `read-10min`, `read-full`) still live in the root phase directories.
+- This keeps the repo practical and publishable without a large disruptive rewrite.
